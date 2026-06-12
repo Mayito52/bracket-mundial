@@ -70,17 +70,13 @@ async function cargarPartidosReal(fechaSeleccionada) {
     const fechaFormateada = new Date(fechaSeleccionada + 'T00:00:00').toLocaleDateString('es-ES', opcionesFecha);
     tituloFecha.innerText = fechaFormateada;
 
-    // Si ya existe en la memoria, lo usamos y evitamos peticiones extra a la API
     if (memoriaPartidos[fechaSeleccionada]) {
-        console.log('Cargado desde memoria temporal.');
         renderizarTarjetasHTML(memoriaPartidos[fechaSeleccionada], listaPartidos, contadorPartidos);
         return;
     }
 
     listaPartidos.innerHTML = '<p style="color: white; text-align: center; font-family: sans-serif;">Buscando partidos en tiempo real...</p>';
-    contadorPartidos.innerText = 'Cargando...';
-
-    // SOLUCIÓN: Ampliar el rango de búsqueda +/- 1 día para no perder partidos por la diferencia UTC
+    
     const fechaObj = new Date(fechaSeleccionada + 'T12:00:00');
     const diaAntes = new Date(fechaObj); diaAntes.setDate(diaAntes.getDate() - 1);
     const diaDespues = new Date(fechaObj); diaDespues.setDate(diaDespues.getDate() + 1);
@@ -94,103 +90,67 @@ async function cargarPartidosReal(fechaSeleccionada) {
     try {
         const response = await fetch(fetchUrl, {
             method: 'GET',
-            headers: {
-                'X-Auth-Token': API_TOKEN,
-                'Content-Type': 'application/json'
-            }
+            headers: { 'X-Auth-Token': API_TOKEN, 'Content-Type': 'application/json' }
         });
 
-        if (!response.ok) {
-            if (response.status === 429) throw new Error('Límite de API alcanzado');
-            throw new Error('Error de conexión');
-        }
-
+        if (!response.ok) throw new Error('Error');
         const data = await response.json();
         const todosLosPartidosRango = data.matches || [];
 
-        // 1. Extraemos los valores del día que el usuario seleccionó
         const [yearSel, monthSel, daySel] = fechaSeleccionada.split('-').map(Number);
-
-        // 2. Filtramos comparando la hora local del dispositivo, no la UTC
         const partidosDelDiaLocal = todosLosPartidosRango.filter(partido => {
             const fechaLocal = new Date(partido.utcDate);
-            return fechaLocal.getFullYear() === yearSel &&
-                   fechaLocal.getMonth() === (monthSel - 1) &&
-                   fechaLocal.getDate() === daySel;
+            return fechaLocal.getFullYear() === yearSel && fechaLocal.getMonth() === (monthSel - 1) && fechaLocal.getDate() === daySel;
         });
 
-        // 3. Ordenamos cronológicamente (menor a mayor)
         partidosDelDiaLocal.sort((a, b) => new Date(a.utcDate) - new Date(b.utcDate));
-
-        // Guardamos solo los partidos procesados y ordenados en la memoria
         memoriaPartidos[fechaSeleccionada] = partidosDelDiaLocal;
         renderizarTarjetasHTML(partidosDelDiaLocal, listaPartidos, contadorPartidos);
 
     } catch (error) {
-        console.error(error);
-        contadorPartidos.innerText = 'Error';
-        if (error.message.includes('Límite')) {
-            listaPartidos.innerHTML = '<p style="color: #ff9800; text-align: center; font-family: sans-serif;">Demasiadas peticiones. Por favor, espera un minuto y recarga.</p>';
-        } else {
-            listaPartidos.innerHTML = '<p style="color: #ff4444; text-align: center; font-family: sans-serif;">Error al conectar con el servidor de resultados.</p>';
-        }
+        listaPartidos.innerHTML = '<p style="color: #ff4444; text-align: center; font-family: sans-serif;">Error al conectar.</p>';
     }
 }
 
 function renderizarTarjetasHTML(partidos, contenedorDestino, contenedorContador) {
     contenedorDestino.innerHTML = '';
     contenedorContador.innerText = `${partidos.length} partido${partidos.length !== 1 ? 's' : ''}`;
-
-    if (partidos.length === 0) {
-        contenedorDestino.innerHTML = '<p style="color: #aaa; text-align: center; padding: 20px; font-family: sans-serif;">No hay partidos programados por la FIFA para este día en la base de datos.</p>';
-        return;
-    }
-
     partidos.forEach(partido => {
         const nombreGrupo = partido.group ? partido.group.replace('GROUP_', 'Grupo ') : 'Fase Final';
-        const fechaUTC = new Date(partido.utcDate);
-        
-        // Formato forzado a 12 horas para mantener la estética de "10:00 p.m."
-        const horaLocal = fechaUTC.toLocaleTimeString('es-ES', { 
-            hour: '2-digit', 
-            minute: '2-digit',
-            hour12: true 
-        });
-
+        const horaLocal = new Date(partido.utcDate).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: true });
         const local = partido.homeTeam;
         const visitante = partido.awayTeam;
+        let marcador = (partido.status === 'FINISHED' || partido.status === 'IN_PLAY') ? `${partido.score.fullTime.home} - ${partido.score.fullTime.away}` : 'VS';
 
-        let marcador = 'VS';
-        if (partido.status === 'FINISHED' || partido.status === 'IN_PLAY' || partido.status === 'PAUSED') {
-            marcador = `${partido.score.fullTime.home} - ${partido.score.fullTime.away}`;
-        }
-
-        const tarjetaHTML = `
-            <div class="partido-card" style="background: rgba(25px, 25px, 30px, 0.6); background-color: #0e0e13; border: 1px solid #1a1a24; border-radius: 12px; padding: 20px; margin-bottom: 15px; color: white; display: flex; flex-direction: column; font-family: sans-serif; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
-                <div style="display: flex; justify-content: space-between; font-size: 13px; color: #888; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid #1a1a24;">
-                    <span style="background: #1a1a24; padding: 3px 8px; border-radius: 4px; color: #ccc;">${nombreGrupo}</span>
-                    <span style="font-weight: bold; color: #fff;">${horaLocal}</span>
+        contenedorDestino.insertAdjacentHTML('beforeend', `
+            <div class="partido-card" style="background: #0e0e13; border: 1px solid #1a1a24; border-radius: 12px; padding: 20px; margin-bottom: 15px; color: white;">
+                <div style="display: flex; justify-content: space-between; font-size: 13px; color: #888; margin-bottom: 15px;">
+                    <span>${nombreGrupo}</span><span>${horaLocal}</span>
                 </div>
                 <div style="display: flex; justify-content: center; align-items: center; gap: 10px;">
-                    <div style="display: flex; align-items: center; gap: 12px; width: 42%; justify-content: flex-end; text-align: right;">
-                        <span style="font-size: 15px; font-weight: 500;">${local.name}</span>
-                        <span style="color: #666; font-size: 12px; font-weight: bold;">${local.tla || ''}</span>
-                        <img src="${local.crest}" alt="" style="width: 28px; height: 28px; object-fit: contain;">
-                    </div>
-                    <div style="font-weight: bold; font-size: 16px; color: #aaa; width: 16%; text-align: center; background: #161622; padding: 6px 10px; border-radius: 6px; border: 1px solid #222533;">
-                        <span style="${marcador !== 'VS' ? 'color: #ffc107; font-size: 18px;' : ''}">${marcador}</span>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 12px; width: 42%; justify-content: flex-start; text-align: left;">
-                        <img src="${visitante.crest}" alt="" style="width: 28px; height: 28px; object-fit: contain;">
-                        <span style="font-size: 15px; font-weight: 500;">${visitante.name}</span>
-                        <span style="color: #666; font-size: 12px; font-weight: bold;">${visitante.tla || ''}</span>
-                    </div>
+                    <span style="width: 42%; text-align: right;">${local.name}</span>
+                    <span style="font-weight: bold; background: #161622; padding: 5px; border-radius: 6px;">${marcador}</span>
+                    <span style="width: 42%; text-align: left;">${visitante.name}</span>
                 </div>
             </div>
-        `;
-        contenedorDestino.insertAdjacentHTML('beforeend', tarjetaHTML);
+        `);
     });
 }
+
+// ====== CARGA SEGURA DE ADSTERRA (SOCIAL BAR) ======
+window.addEventListener('load', function() {
+    setTimeout(function() {
+        try {
+            var adScript = document.createElement('script');
+            adScript.src = "https://pl29726761.effectivecpmnetwork.com/c2/d4/c8/c2d4c85226d2fd4d317de4ec01beecc7.js";
+            adScript.async = true;
+            adScript.setAttribute('data-cfasync', 'false');
+            document.body.appendChild(adScript);
+        } catch (e) {
+            console.warn("Publicidad bloqueada.");
+        }
+    }, 2000);
+});
 
 document.addEventListener('DOMContentLoaded', () => {
     inicializarCalendarioReal();
