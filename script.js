@@ -24,7 +24,6 @@ function inicializarCalendarioReal() {
 
     let botonesHTML = '';
     fechasMundial.forEach(fecha => {
-        // CORREGIDO: fecha.texto para que se vea el texto en el botón
         botonesHTML += `<button class="fecha-btn" id="btn-${fecha.id}" data-fecha="${fecha.id}" style="background: #111116; color: #fff; border: 1px solid #222; padding: 10px 15px; margin-right: 8px; border-radius: 6px; cursor: pointer; font-weight: bold; font-family: sans-serif;">${fecha.texto}</button>`;
     });
 
@@ -71,7 +70,7 @@ async function cargarPartidosReal(fechaSeleccionada) {
     const fechaFormateada = new Date(fechaSeleccionada + 'T00:00:00').toLocaleDateString('es-ES', opcionesFecha);
     tituloFecha.innerText = fechaFormateada;
 
-    // Si ya existe en la memoria, lo usamos
+    // Si ya existe en la memoria, lo usamos y evitamos peticiones extra a la API
     if (memoriaPartidos[fechaSeleccionada]) {
         console.log('Cargado desde memoria temporal.');
         renderizarTarjetasHTML(memoriaPartidos[fechaSeleccionada], listaPartidos, contadorPartidos);
@@ -81,7 +80,15 @@ async function cargarPartidosReal(fechaSeleccionada) {
     listaPartidos.innerHTML = '<p style="color: white; text-align: center; font-family: sans-serif;">Buscando partidos en tiempo real...</p>';
     contadorPartidos.innerText = 'Cargando...';
 
-    const urlApi = `${BASE_URL}?dateFrom=${fechaSeleccionada}&dateTo=${fechaSeleccionada}`;
+    // SOLUCIÓN: Ampliar el rango de búsqueda +/- 1 día para no perder partidos por la diferencia UTC
+    const fechaObj = new Date(fechaSeleccionada + 'T12:00:00');
+    const diaAntes = new Date(fechaObj); diaAntes.setDate(diaAntes.getDate() - 1);
+    const diaDespues = new Date(fechaObj); diaDespues.setDate(diaDespues.getDate() + 1);
+
+    const strInicio = diaAntes.toISOString().split('T')[0];
+    const strFin = diaDespues.toISOString().split('T')[0];
+
+    const urlApi = `${BASE_URL}?dateFrom=${strInicio}&dateTo=${strFin}`;
     const fetchUrl = CORS_PROXY + encodeURIComponent(urlApi);
 
     try {
@@ -99,12 +106,25 @@ async function cargarPartidosReal(fechaSeleccionada) {
         }
 
         const data = await response.json();
-        console.log("Datos reales recibidos de la API:", data);
-        
-        const partidos = data.matches || [];
+        const todosLosPartidosRango = data.matches || [];
 
-        memoriaPartidos[fechaSeleccionada] = partidos;
-        renderizarTarjetasHTML(partidos, listaPartidos, contadorPartidos);
+        // 1. Extraemos los valores del día que el usuario seleccionó
+        const [yearSel, monthSel, daySel] = fechaSeleccionada.split('-').map(Number);
+
+        // 2. Filtramos comparando la hora local del dispositivo, no la UTC
+        const partidosDelDiaLocal = todosLosPartidosRango.filter(partido => {
+            const fechaLocal = new Date(partido.utcDate);
+            return fechaLocal.getFullYear() === yearSel &&
+                   fechaLocal.getMonth() === (monthSel - 1) &&
+                   fechaLocal.getDate() === daySel;
+        });
+
+        // 3. Ordenamos cronológicamente (menor a mayor)
+        partidosDelDiaLocal.sort((a, b) => new Date(a.utcDate) - new Date(b.utcDate));
+
+        // Guardamos solo los partidos procesados y ordenados en la memoria
+        memoriaPartidos[fechaSeleccionada] = partidosDelDiaLocal;
+        renderizarTarjetasHTML(partidosDelDiaLocal, listaPartidos, contadorPartidos);
 
     } catch (error) {
         console.error(error);
@@ -129,7 +149,13 @@ function renderizarTarjetasHTML(partidos, contenedorDestino, contenedorContador)
     partidos.forEach(partido => {
         const nombreGrupo = partido.group ? partido.group.replace('GROUP_', 'Grupo ') : 'Fase Final';
         const fechaUTC = new Date(partido.utcDate);
-        const horaLocal = fechaUTC.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        // Formato forzado a 12 horas para mantener la estética de "10:00 p.m."
+        const horaLocal = fechaUTC.toLocaleTimeString('es-ES', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: true 
+        });
 
         const local = partido.homeTeam;
         const visitante = partido.awayTeam;
