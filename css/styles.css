@@ -799,12 +799,19 @@ body {
   .calendar-team.home { text-align: center; justify-content: center; }
   .calendar-team.away { text-align: center; justify-content: center; }
   
+  /* Arreglo para el Bracket en móvil */
   .bracket-visualization {
-    display: none; /* Handled by mobile view tabs */
-  }
-  .bracket-round.active {
-    display: flex;
+    display: flex !important; /* Forzamos que se vea */
+    overflow-x: auto;         /* Habilita el desplazamiento lateral */
+    -webkit-overflow-scrolling: touch; /* Scroll suave en iOS/Android */
+    padding-bottom: 20px;
+    gap: 15px;
     width: 100%;
+  }
+
+  .bracket-round {
+    min-width: 200px; /* Tamaño mínimo para que las columnas no se enciman */
+    flex: 0 0 auto;   /* Evita que se compriman demasiado */
   }
 }
 
