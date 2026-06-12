@@ -1,6 +1,7 @@
 // ====== CONFIGURACIÓN DE LA API ======
+// Cambiamos el enlace general por el de la competición específica del Mundial (WC)
+const BASE_URL = 'https://api.football-data.org/v4/competitions/WC/matches';
 const API_TOKEN = '9727ff0d1c3e4a3fbc6c4d23a071bd6d';
-const BASE_URL = 'https://api.football-data.org/v4/matches';
 const CORS_PROXY = 'https://corsproxy.io/?'; 
 
 // Memoria Caché temporal para proteger el límite de 10 peticiones/minuto
@@ -24,15 +25,14 @@ function inicializarCalendarioReal() {
     const contenedorRaiz = document.getElementById('calendar-api-real');
     if (!contenedorRaiz) return;
 
-    // Generar la botonera y el espacio de los partidos adaptado a tus estilos CSS
     let botonesHTML = '';
     fechasMundial.forEach(fecha => {
-        botonesHTML += `<button class="fecha-btn" id="btn-${fecha.id}" data-fecha="${fecha.id}" style="background: #111116; color: #fff; border: 1px solid #222; padding: 10px 15px; margin-right: 8px; border-radius: 6px; cursor: pointer; font-weight: bold; font-family: sans-serif;">${fecha.texto}</button>`;
+        botonesHTML += `<button class="fecha-btn" id="btn-${fecha.id}" data-fecha="${fecha.id}" style="background: #111116; color: #fff; border: 1px solid #222; padding: 10px 15px; margin-right: 8px; border-radius: 6px; cursor: pointer; font-weight: bold; font-family: sans-serif;">${fecha.text}</button>`;
     });
 
     contenedorRaiz.innerHTML = `
         <div style="margin-bottom: 20px;">
-            <p style="color: #aaa; font-family: sans-serif; font-size: 14px; margin-bottom: 10px;">Todos los partidos de la fase de grupos</p>
+            <p style="color: #aaa; font-family: sans-serif; font-size: 14px; margin-bottom: 10px;">Todos los partidos de la fase de grupos (API en vivo)</p>
             <div id="botonera-fechas" style="display: flex; overflow-x: auto; padding-bottom: 10px;">
                 ${botonesHTML}
             </div>
@@ -44,7 +44,6 @@ function inicializarCalendarioReal() {
         <div id="lista-partidos-api"></div>
     `;
 
-    // Asignar eventos clic a los nuevos botones
     document.querySelectorAll('.fecha-btn').forEach(boton => {
         boton.addEventListener('click', (e) => {
             const fechaSeleccionada = e.target.getAttribute('data-fecha');
@@ -61,10 +60,9 @@ async function cargarPartidosReal(fechaSeleccionada) {
 
     if (!listaPartidos) return;
 
-    // Actualizar estilos visuales de los botones de fechas (marcar activo en oro/amarillo)
     document.querySelectorAll('.fecha-btn').forEach(btn => {
         if (btn.getAttribute('data-fecha') === fechaSeleccionada) {
-            btn.style.background = '#ffc107'; // Tu color Gold activo
+            btn.style.background = '#ffc107'; 
             btn.style.color = '#000';
         } else {
             btn.style.background = '#111116';
@@ -72,23 +70,19 @@ async function cargarPartidosReal(fechaSeleccionada) {
         }
     });
 
-    // Formatear el título de la fecha en pantalla
     const opcionesFecha = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
-    // Ajustar desfase de zona horaria local al crear el objeto Date
     const fechaFormateada = new Date(fechaSeleccionada + 'T00:00:00').toLocaleDateString('es-ES', opcionesFecha);
     tituloFecha.innerText = fechaFormateada;
 
-    // Verificar si ya tenemos guardada esta fecha en la memoria Caché
     if (memoriaPartidos[fechaSeleccionada]) {
-        console.log('Cargado desde memoria temporal.');
         renderizarTarjetasHTML(memoriaPartidos[fechaSeleccionada], listaPartidos, contadorPartidos);
         return;
     }
 
-    // Mostrar estado "Cargando"
     listaPartidos.innerHTML = '<p style="color: white; text-align: center; font-family: sans-serif;">Buscando partidos en tiempo real...</p>';
     contadorPartidos.innerText = 'Cargando...';
 
+    // Construcción de la URL específica de la competición
     const urlApi = `${BASE_URL}?dateFrom=${fechaSeleccionada}&dateTo=${fechaSeleccionada}`;
     const fetchUrl = CORS_PROXY + encodeURIComponent(urlApi);
 
@@ -107,11 +101,13 @@ async function cargarPartidosReal(fechaSeleccionada) {
         }
 
         const data = await response.json();
-        const partidos = data.matches;
+        
+        // Esto te permitirá ver en la consola (F12) exactamente qué está respondiendo el servidor
+        console.log("Datos recibidos de la FIFA para la fecha " + fechaSeleccionada + ":", data);
+        
+        const partidos = data.matches || [];
 
-        // Guardar en caché para evitar duplicar consultas
         memoriaPartidos[fechaSeleccionada] = partidos;
-
         renderizarTarjetasHTML(partidos, listaPartidos, contadorPartidos);
 
     } catch (error) {
@@ -131,7 +127,7 @@ function renderizarTarjetasHTML(partidos, contenedorDestino, contenedorContador)
     contenedorContador.innerText = `${partidos.length} partido${partidos.length !== 1 ? 's' : ''}`;
 
     if (partidos.length === 0) {
-        contenedorDestino.innerHTML = '<p style="color: #aaa; text-align: center; padding: 20px; font-family: sans-serif;">No hay partidos programados por la FIFA para este día.</p>';
+        contenedorDestino.innerHTML = '<p style="color: #aaa; text-align: center; padding: 20px; font-family: sans-serif;">No hay partidos programados por la FIFA para este día en la base de datos.</p>';
         return;
     }
 
@@ -180,6 +176,6 @@ function renderizarTarjetasHTML(partidos, contenedorDestino, contenedorContador)
 // ====== INICIALIZACIÓN ======
 document.addEventListener('DOMContentLoaded', () => {
     inicializarCalendarioReal();
-    // Cargar por defecto el día inaugural registrado (12 de Junio)
-    cargarPartidosReal('2026-06-12');
+    // Cambiado al 11 de Junio (Día inaugural del Mundial 2026)
+    cargarPartidosReal('2026-06-11');
 });
