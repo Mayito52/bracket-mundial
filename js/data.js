@@ -11,10 +11,10 @@
     { name: 'México', code: 'MEX', flag: '🇲🇽', group: 'A', fifaRanking: 15, confederation: 'CONCACAF' },
     { name: 'Sudáfrica', code: 'RSA', flag: '🇿🇦', group: 'A', fifaRanking: 59, confederation: 'CAF' },
     { name: 'Corea del Sur', code: 'KOR', flag: '🇰🇷', group: 'A', fifaRanking: 22, confederation: 'AFC' },
-    { name: 'Dinamarca', code: 'DEN', flag: '🇩🇰', group: 'A', fifaRanking: 16, confederation: 'UEFA' },
+    { name: 'República Checa', code: 'CZE', flag: '🇨🇿', group: 'A', fifaRanking: 40, confederation: 'UEFA' },
     // Group B
     { name: 'Canadá', code: 'CAN', flag: '🇨🇦', group: 'B', fifaRanking: 40, confederation: 'CONCACAF' },
-    { name: 'Italia', code: 'ITA', flag: '🇮🇹', group: 'B', fifaRanking: 9, confederation: 'UEFA' },
+    { name: 'Bosnia y Herzegovina', code: 'BIH', flag: '🇧🇦', group: 'B', fifaRanking: 74, confederation: 'UEFA' },
     { name: 'Catar', code: 'QAT', flag: '🇶🇦', group: 'B', fifaRanking: 34, confederation: 'AFC' },
     { name: 'Suiza', code: 'SUI', flag: '🇨🇭', group: 'B', fifaRanking: 19, confederation: 'UEFA' },
     // Group C
@@ -35,7 +35,7 @@
     // Group F
     { name: 'Países Bajos', code: 'NED', flag: '🇳🇱', group: 'F', fifaRanking: 7, confederation: 'UEFA' },
     { name: 'Japón', code: 'JPN', flag: '🇯🇵', group: 'F', fifaRanking: 18, confederation: 'AFC' },
-    { name: 'Polonia', code: 'POL', flag: '🇵🇱', group: 'F', fifaRanking: 28, confederation: 'UEFA' },
+    { name: 'Suecia', code: 'SWE', flag: '🇸🇪', group: 'F', fifaRanking: 24, confederation: 'UEFA' },
     { name: 'Túnez', code: 'TUN', flag: '🇹🇳', group: 'F', fifaRanking: 41, confederation: 'CAF' },
     // Group G
     { name: 'Bélgica', code: 'BEL', flag: '🇧🇪', group: 'G', fifaRanking: 3, confederation: 'UEFA' },
@@ -50,7 +50,7 @@
     // Group I
     { name: 'Francia', code: 'FRA', flag: '🇫🇷', group: 'I', fifaRanking: 2, confederation: 'UEFA' },
     { name: 'Senegal', code: 'SEN', flag: '🇸🇳', group: 'I', fifaRanking: 17, confederation: 'CAF' },
-    { name: 'Bolivia', code: 'BOL', flag: '🇧🇴', group: 'I', fifaRanking: 84, confederation: 'CONMEBOL' },
+    { name: 'Irak', code: 'IRQ', flag: '🇮🇶', group: 'I', fifaRanking: 55, confederation: 'AFC' },
     { name: 'Noruega', code: 'NOR', flag: '🇳🇴', group: 'I', fifaRanking: 47, confederation: 'UEFA' },
     // Group J
     { name: 'Argentina', code: 'ARG', flag: '🇦🇷', group: 'J', fifaRanking: 1, confederation: 'CONMEBOL' },
@@ -59,7 +59,7 @@
     { name: 'Jordania', code: 'JOR', flag: '🇯🇴', group: 'J', fifaRanking: 71, confederation: 'AFC' },
     // Group K
     { name: 'Portugal', code: 'POR', flag: '🇵🇹', group: 'K', fifaRanking: 6, confederation: 'UEFA' },
-    { name: 'Jamaica', code: 'JAM', flag: '🇯🇲', group: 'K', fifaRanking: 55, confederation: 'CONCACAF' },
+    { name: 'RD Congo', code: 'COD', flag: '🇨🇩', group: 'K', fifaRanking: 60, confederation: 'CAF' },
     { name: 'Uzbekistán', code: 'UZB', flag: '🇺🇿', group: 'K', fifaRanking: 64, confederation: 'AFC' },
     { name: 'Colombia', code: 'COL', flag: '🇨🇴', group: 'K', fifaRanking: 12, confederation: 'CONMEBOL' },
     // Group L
@@ -70,17 +70,17 @@
   ];
 
   const GROUPS = {
-    A: ['MEX', 'RSA', 'KOR', 'DEN'],
-    B: ['CAN', 'ITA', 'QAT', 'SUI'],
+    A: ['MEX', 'RSA', 'KOR', 'CZE'],
+    B: ['CAN', 'BIH', 'QAT', 'SUI'],
     C: ['BRA', 'MAR', 'HAI', 'SCO'],
     D: ['USA', 'PAR', 'AUS', 'TUR'],
     E: ['GER', 'CUW', 'CIV', 'ECU'],
-    F: ['NED', 'JPN', 'POL', 'TUN'],
+    F: ['NED', 'JPN', 'SWE', 'TUN'],
     G: ['BEL', 'EGY', 'IRN', 'NZL'],
     H: ['ESP', 'CPV', 'KSA', 'URU'],
-    I: ['FRA', 'SEN', 'BOL', 'NOR'],
+    I: ['FRA', 'SEN', 'IRQ', 'NOR'],
     J: ['ARG', 'ALG', 'AUT', 'JOR'],
-    K: ['POR', 'JAM', 'UZB', 'COL'],
+    K: ['POR', 'COD', 'UZB', 'COL'],
     L: ['ENG', 'CRO', 'GHA', 'PAN']
   };
 
